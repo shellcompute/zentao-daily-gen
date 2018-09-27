@@ -19,7 +19,7 @@ python3 zentao-daily-gen.py
 ### 注意
 - 连接MySQL需要安装[PyMySQL](https://pypi.org/project/PyMySQL/):
 ```
-pip install pymysql
+pip3 install pymysql
 ```
 
 
