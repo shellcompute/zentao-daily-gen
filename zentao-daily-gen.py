@@ -110,6 +110,7 @@ class ZentaoDialyGen:
     message['To'] = ','.join(self._dialy_to_mails)
     try:
       smtp = smtplib.SMTP()
+      print("connect to SMTP server...")
       conn_code, conn_msg  = smtp.connect(self._mail_host, 25)
       if conn_code != 220:
         print("SMTP connect reply code: {code}, message: {msg}".format(code=conn_code, msg=conn_msg))
