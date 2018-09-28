@@ -44,12 +44,18 @@ class ZentaoDialyGen:
     ----------------------------------------------------------------------------</p>
     """.format(version=__version__))
     # Connect to the database
+    print("Connect to the database...")
     conn = pymysql.connect(host=self._mysql_host,
                            port=self._mysql_port,
                            user=self._mysql_user,
                            password=self._mysql_passwd,
                            db='zentao',
                            cursorclass=pymysql.cursors.DictCursor)
+    try:
+      conn.ping(reconnect=True)
+      print("the server is alive.")
+    except pymysql.Error as e:
+      print("Erro occur when checking if the server is alive.", e)
     try:
       with conn.cursor() as cursor:
         sql = """
