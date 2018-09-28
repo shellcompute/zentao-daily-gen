@@ -102,7 +102,6 @@ class ZentaoDialyGen:
 
   def gen_daily(self):
     daily_log = self._get_daily_log()
-    print("daily log: ", daily_log)
     subject = 'Zentao Dialy {today}'.format(today=self._today)
     message = MIMEText(daily_log, 'html', 'utf-8')
     message['Subject'] = Header(subject, 'utf-8')
@@ -117,10 +116,13 @@ class ZentaoDialyGen:
         return False
       smtp.login(self._mail_user, self._mail_passwd)
       smtp.sendmail(self._mail_user, self._dialy_to_mails, message.as_string())
-    except smtplib.SMTPException:
-      print("send mail failed.")
-      return False
-    return True
+      smtp.quit()
+      return True
+    except smtplib.SMTPException as e:
+      print(e)
+    except Exception as e:
+      print("Unexpected error:", e)
+    return False
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Zentao Dialy Generator')
