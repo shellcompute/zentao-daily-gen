@@ -110,12 +110,16 @@ class ZentaoDialyGen:
     message['To'] = ','.join(self._dialy_to_mails)
     try:
       smtp = smtplib.SMTP()
-      smtp.connect(self._mail_host, 25)
+      conn_code, conn_msg  = smtp.connect(self._mail_host, 25)
+      if conn_code != 220:
+        print("SMTP connect reply code: {code}, message: {msg}".format(code=conn_code, msg=conn_msg))
+        return False
       smtp.login(self._mail_user, self._mail_passwd)
       smtp.sendmail(self._mail_user, self._dialy_to_mails, message.as_string())
     except smtplib.SMTPException:
       print("send mail failed.")
-      sys.exit(1)
+      return False
+    return True
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Zentao Dialy Generator')
@@ -130,6 +134,8 @@ if __name__ == "__main__":
     print('{cfg} not found'.format(cfg=cfg_filename))
     sys.exit(1)
   gen = ZentaoDialyGen(cfg_filename)
-  gen.gen_daily()
+  if not gen.gen_daily():
+    print("generating daily failed.")
+  print("generating daily done.")
   
   
