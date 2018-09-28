@@ -1,7 +1,8 @@
 # 用Linux自带的crontab实现定时任务
 
-# Step 1: 
-# 写入crontab命令到/etc/crontab
+# http://www.runoob.com/w3cnote/linux-crontab-tasks.html
+
+# 格式说明
 # 1、每分钟执行一次 
 # * * * * * user command
 # 2、每隔2小时执行一次 
@@ -15,4 +16,4 @@
 # 5、每个星期一的8:30执行一次
 # 30 8 * * 1 user command （周的范围为0-7,0和7代表周日）
 
-echo "* * * * * root /usr/bin/python3.6 /data/zentao-daily-gen/zentao-daily-gen.py > /tmp/zentao-daily-gen.log" >> /etc/crontab
+35 23 * * * cd /data/zentao-daily-gen/ && /usr/bin/python3.6 /data/zentao-daily-gen/zentao-daily-gen.py >> /tmp/zentao-daily-gen.log
