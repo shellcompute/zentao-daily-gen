@@ -114,6 +114,7 @@ class ZentaoDialyGen:
       if conn_code != 220:
         print("SMTP connect reply code: {code}, message: {msg}".format(code=conn_code, msg=conn_msg))
         return False
+      print("login in SMTP server...")
       smtp.login(self._mail_user, self._mail_passwd)
       smtp.sendmail(self._mail_user, self._dialy_to_mails, message.as_string())
       smtp.quit()
