@@ -50,15 +50,7 @@ class ZentaoDialyGen:
                            user=self._mysql_user,
                            password=self._mysql_passwd,
                            db='zentao',
-                           cursorclass=pymysql.cursors.DictCursor)
-                           
-    # Check if the server is alive
-    try:
-      conn.ping(reconnect=True)
-      print("the server is alive.")
-    except pymysql.Error as e:
-      print("Erro occur when checking if the server is alive.", e)
-      sys.exit(1)
+                           cursorclass=pymysql.cursors.DictCursor)                      
     
     try:
       with conn.cursor() as cursor:
@@ -77,6 +69,7 @@ class ZentaoDialyGen:
         ORDER BY A.account, B.task
         """
         sql = sql.format(users=','.join(self._dialy_users), date=self._today)
+        print("sql:", sql)
         cursor.execute(sql)
         rs = cursor.fetchall()
         for key, group in itertools.groupby(rs, key=lambda x: x['account']):
