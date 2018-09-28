@@ -72,6 +72,7 @@ class ZentaoDialyGen:
         print("sql:", sql)
         cursor.execute(sql)
         rs = cursor.fetchall()
+        print("records count: ", len(rs))
         for key, group in itertools.groupby(rs, key=lambda x: x['account']):
           detail = list(group)
           daily_lines.append('<b>{name}{account}</b>'.format(name=detail[0]['realname'], account=key))
