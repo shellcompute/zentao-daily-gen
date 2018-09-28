@@ -3,7 +3,7 @@
 @Author: leon.li(l2m2lq@gmail.com)
 @Date: 2018-09-27 22:43:03
 @Last Modified By: leon.li(l2m2lq@gmail.com>)
-@Last Modified Time: 2018-09-28 00:05:43
+@Last Modified Time: 2018-09-28 23:33:43
 '''
 
 import argparse
@@ -18,7 +18,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 
-__version__ = '0.1'
+__version__ = '0.2'
 
 class ZentaoDialyGen:
   def __init__(self, cfg_filename):
