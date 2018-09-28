@@ -102,6 +102,7 @@ class ZentaoDialyGen:
 
   def gen_daily(self):
     daily_log = self._get_daily_log()
+    print("daily log: ", daily_log)
     subject = 'Zentao Dialy {today}'.format(today=self._today)
     message = MIMEText(daily_log, 'html', 'utf-8')
     message['Subject'] = Header(subject, 'utf-8')
