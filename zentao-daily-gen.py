@@ -37,6 +37,14 @@ class ZentaoDialyGen:
     self._mail_host = conf.get('core', 'mail_host')
     self._mail_passwd = conf.get('core', 'mail_password')
     self._today = datetime.datetime.today().strftime('%Y-%m-%d')
+  
+  def _render_status(self, status):
+    if status == 'done' or status == 'closed':
+      return '<span style="color: #009900;">done</span>'
+    elif status == 'doing':
+      return '<span style="color: #ffcc00">doing</span>'
+    else:
+      return '<span>{}</span>'.format(status)
 
   def _get_daily_log(self):
     daily_lines = []
@@ -85,16 +93,16 @@ class ZentaoDialyGen:
             flag = str()
             if i['fromBug'] == 0:
               url = '{url}/zentao/task-view-{taskId}.html'.format(url=self._zentao_url, taskId=i['task'])
-              flag = '<a href={url}><span style="color:#2ECC40">task</span></a>'.format(url=url)
+              flag = '<a href={url}>task</a>'.format(url=url)
             else:
               url = '{url}/zentao/bug-view-{bugId}.html'.format(url=self._zentao_url, bugId=i['fromBug'])
-              flag = '<a href={url}><span style="color:#39CCCC">bug</span></a>'.format(url=url)
-            line = '{num}). [{consumed} 小时]{flag} {task}.{status}'.format(
+              flag = '<a href={url}>bug</a>'.format(url=url)
+            line = '{num}). [{consumed} 小时][{status}]{flag} {task}.'.format(
               num=num, 
               consumed=decimal.Decimal(i['consumed']), 
               flag=flag,
               task=i['task_title'],
-              status=i['task_status'])
+              status=self._render_status(i['task_status']))
             daily_lines.append(line)
             num = chr(ord(num) + 1)
           daily_lines.append('')
