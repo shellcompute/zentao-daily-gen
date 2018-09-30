@@ -18,7 +18,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 
-__version__ = '0.2'
+__version__ = '0.3'
 
 class ZentaoDialyGen:
   def __init__(self, cfg_filename):
@@ -30,7 +30,9 @@ class ZentaoDialyGen:
     self._mysql_user = conf.get('zentao_db', 'user')
     self._mysql_passwd = conf.get('zentao_db', 'password')
     self._dialy_users = ["'"+i+"'" for i in conf.get('daily', 'users').split(',')]
-    self._dialy_to_mails = conf.get('daily', 'to_mails').split(',')
+    self._dialy_to_mails = conf.get('daily', 'to_mails')
+    self._dialy_cc_mails = conf.get('daily', 'cc_mails')
+    self._daily_bcc_mails = conf.get('daily', 'bcc_mails')
     self._mail_user = conf.get('core', 'mail_user')
     self._mail_host = conf.get('core', 'mail_host')
     self._mail_passwd = conf.get('core', 'mail_password')
@@ -69,7 +71,6 @@ class ZentaoDialyGen:
         ORDER BY A.account, B.task
         """
         sql = sql.format(users=','.join(self._dialy_users), date=self._today)
-        print("sql:", sql)
         cursor.execute(sql)
         rs = cursor.fetchall()
         print("records count: ", len(rs))
@@ -100,13 +101,19 @@ class ZentaoDialyGen:
       conn.close()
     return '<br />'.join(daily_lines)
 
+  def _addresses(self, addrstring):
+    """Split in comma, strip surrounding whitespace."""
+    return [x.strip() for x in addrstring.split(',')]
+
   def gen_daily(self):
     daily_log = self._get_daily_log()
     subject = 'Zentao Dialy {today}'.format(today=self._today)
     message = MIMEText(daily_log, 'html', 'utf-8')
     message['Subject'] = Header(subject, 'utf-8')
     message['From'] = self._mail_user
-    message['To'] = ','.join(self._dialy_to_mails)
+    message['To'] = self._dialy_to_mails
+    message['Cc'] = self._dialy_cc_mails
+    message['Bcc'] = self._daily_bcc_mails
     try:
       smtp = smtplib.SMTP_SSL(self._mail_host)
       print("connect to SMTP server...")
@@ -116,7 +123,11 @@ class ZentaoDialyGen:
         return False
       print("login in SMTP server...")
       smtp.login(self._mail_user, self._mail_passwd)
-      smtp.sendmail(self._mail_user, self._dialy_to_mails, message.as_string())
+      smtp.sendmail(
+        self._mail_user, 
+        self._addresses(self._dialy_to_mails) + self._addresses(self._dialy_cc_mails) + self._addresses(self._daily_bcc_mails), 
+        message.as_string()
+      )
       smtp.quit()
       return True
     except smtplib.SMTPException as e:
