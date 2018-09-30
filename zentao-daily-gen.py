@@ -30,9 +30,9 @@ class ZentaoDialyGen:
     self._mysql_user = conf.get('zentao_db', 'user')
     self._mysql_passwd = conf.get('zentao_db', 'password')
     self._dialy_users = ["'"+i+"'" for i in conf.get('daily', 'users').split(',')]
-    self._dialy_to_mails = conf.get('daily', 'to_mails')
-    self._dialy_cc_mails = conf.get('daily', 'cc_mails')
-    self._daily_bcc_mails = conf.get('daily', 'bcc_mails')
+    self._dialy_to_mails = [x.strip() for x in conf.get('daily', 'to_mails').split(',') if x.strip() != '']
+    self._dialy_cc_mails = [x.strip() for x in conf.get('daily', 'cc_mails').split(',') if x.strip() != '']
+    self._daily_bcc_mails = [x.strip() for x in conf.get('daily', 'bcc_mails').split(',') if x.strip() != '']
     self._mail_user = conf.get('core', 'mail_user')
     self._mail_host = conf.get('core', 'mail_host')
     self._mail_passwd = conf.get('core', 'mail_password')
@@ -58,7 +58,7 @@ class ZentaoDialyGen:
       with conn.cursor() as cursor:
         sql = """
         SELECT A.realname, A.account, B.task, C.name AS task_title,
-        B.consumed, C.fromBug
+        B.consumed, C.fromBug, C.status AS task_status 
         FROM zt_user AS A
         LEFT JOIN (
           SELECT * FROM zt_taskestimate
@@ -89,21 +89,18 @@ class ZentaoDialyGen:
             else:
               url = '{url}/zentao/bug-view-{bugId}.html'.format(url=self._zentao_url, bugId=i['fromBug'])
               flag = '<a href={url}><span style="color:#39CCCC">bug</span></a>'.format(url=url)
-            line = '{num}). [{consumed} 小时]{flag} {task}.'.format(
+            line = '{num}). [{consumed} 小时]{flag} {task}.{status}'.format(
               num=num, 
               consumed=decimal.Decimal(i['consumed']), 
               flag=flag,
-              task=i['task_title'])
+              task=i['task_title'],
+              status=i['task_status'])
             daily_lines.append(line)
             num = chr(ord(num) + 1)
           daily_lines.append('')
     finally:
       conn.close()
-    return '<br />'.join(daily_lines)
-
-  def _addresses(self, addrstring):
-    """Split in comma, strip surrounding whitespace."""
-    return [x.strip() for x in addrstring.split(',')]
+    return '<br />'.join(daily_lines) 
 
   def gen_daily(self):
     daily_log = self._get_daily_log()
@@ -111,9 +108,11 @@ class ZentaoDialyGen:
     message = MIMEText(daily_log, 'html', 'utf-8')
     message['Subject'] = Header(subject, 'utf-8')
     message['From'] = self._mail_user
-    message['To'] = self._dialy_to_mails
-    message['Cc'] = self._dialy_cc_mails
-    message['Bcc'] = self._daily_bcc_mails
+    message['To'] = ','.join(self._dialy_to_mails)
+    if self._dialy_cc_mails:
+      message['Cc'] = ','.join(self._dialy_cc_mails)
+    if self._daily_bcc_mails:
+      message['Bcc'] = ','.join(self._daily_bcc_mails)
     try:
       smtp = smtplib.SMTP_SSL(self._mail_host)
       print("connect to SMTP server...")
@@ -125,7 +124,7 @@ class ZentaoDialyGen:
       smtp.login(self._mail_user, self._mail_passwd)
       smtp.sendmail(
         self._mail_user, 
-        self._addresses(self._dialy_to_mails) + self._addresses(self._dialy_cc_mails) + self._addresses(self._daily_bcc_mails), 
+        self._dialy_to_mails + self._dialy_cc_mails + self._daily_bcc_mails,
         message.as_string()
       )
       smtp.quit()
