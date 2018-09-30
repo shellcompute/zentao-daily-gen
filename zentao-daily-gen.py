@@ -31,8 +31,10 @@ class ZentaoDialyGen:
     self._mysql_passwd = conf.get('zentao_db', 'password')
     self._dialy_users = ["'"+i+"'" for i in conf.get('daily', 'users').split(',')]
     self._dialy_to_mails = [x.strip() for x in conf.get('daily', 'to_mails').split(',') if x.strip() != '']
-    self._dialy_cc_mails = [x.strip() for x in conf.get('daily', 'cc_mails').split(',') if x.strip() != '']
-    self._daily_bcc_mails = [x.strip() for x in conf.get('daily', 'bcc_mails').split(',') if x.strip() != '']
+    if conf.has_option('daily', 'cc_mails'):
+      self._dialy_cc_mails = [x.strip() for x in conf.get('daily', 'cc_mails').split(',') if x.strip() != '']
+    if conf.has_option('daily', 'bcc_mails'):
+      self._daily_bcc_mails = [x.strip() for x in conf.get('daily', 'bcc_mails').split(',') if x.strip() != '']
     self._mail_user = conf.get('core', 'mail_user')
     self._mail_host = conf.get('core', 'mail_host')
     self._mail_passwd = conf.get('core', 'mail_password')
