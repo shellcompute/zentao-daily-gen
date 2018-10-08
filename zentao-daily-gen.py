@@ -18,7 +18,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 
-__version__ = '0.3'
+__version__ = '0.4'
 
 class ZentaoDialyGen:
   def __init__(self, cfg_filename):
@@ -95,10 +95,10 @@ class ZentaoDialyGen:
             flag = str()
             if i['fromBug'] == 0:
               url = '{url}/zentao/task-view-{taskId}.html'.format(url=self._zentao_url, taskId=i['task'])
-              flag = '<a href={url}>task</a>'.format(url=url)
+              flag = '<a href={url}>Task</a>'.format(url=url)
             else:
               url = '{url}/zentao/bug-view-{bugId}.html'.format(url=self._zentao_url, bugId=i['fromBug'])
-              flag = '<a href={url}>bug</a>'.format(url=url)
+              flag = '<a href={url}>Bug</a>'.format(url=url)
             line = '{num}). [{consumed} 小时][{status}]{flag} {task}.'.format(
               num=num, 
               consumed=decimal.Decimal(i['consumed']), 
@@ -112,8 +112,88 @@ class ZentaoDialyGen:
       conn.close()
     return '<br />'.join(daily_lines) 
 
+  def _get_last_5_days_log(self):
+    # Connect to the database
+    print("Connect to the database...")
+    conn = pymysql.connect(host=self._mysql_host,
+                           port=self._mysql_port,
+                           user=self._mysql_user,
+                           password=self._mysql_passwd,
+                           db='zentao',
+                           cursorclass=pymysql.cursors.DictCursor)                      
+    days_data = []
+    names = []
+    try:
+      day_pre = 4
+      names_loaded = False
+      while day_pre >= 0:
+        with conn.cursor() as cursor:
+          sql = """
+          SELECT A.realname, A.account, B.task, C.name AS task_title,
+          B.consumed, C.fromBug, C.status AS task_status 
+          FROM zt_user AS A
+          LEFT JOIN (
+            SELECT * FROM zt_taskestimate
+            WHERE date = '{date}' AND consumed > 0
+          ) B
+          ON A.account = B.account
+          LEFT JOIN zt_task AS C
+          ON B.task = C.id
+          WHERE A.account IN ({users})
+          ORDER BY A.account, B.task
+          """
+          day = datetime.datetime.today() - datetime.timedelta(days=day_pre)
+          sql = sql.format(users=','.join(self._dialy_users), date=day.strftime('%Y-%m-%d'))
+          cursor.execute(sql)
+          rs = cursor.fetchall()
+          current_data = []
+          for key, group in itertools.groupby(rs, key=lambda x: x['account']):
+            detail = list(group)
+            if not names_loaded:
+              names.append('{name}{account}'.format(name=detail[0]['realname'], account=key))
+            temp = []
+            for i in detail:
+              if not i['consumed']:
+                temp.append('无')
+                break
+              flag = str()
+              if i['fromBug'] == 0:
+                url = '{url}/zentao/task-view-{taskId}.html'.format(url=self._zentao_url, taskId=i['task'])
+                flag = '<a href={url}>Task{taskId}</a>'.format(url=url,taskId=i['task'])
+              else:
+                url = '{url}/zentao/bug-view-{bugId}.html'.format(url=self._zentao_url, bugId=i['fromBug'])
+                flag = '<a href={url}>Bug{bugId}</a>'.format(url=url,bugId=i['fromBug'])
+              line = '[{consumed} 小时][{status}]{flag}'.format(
+                consumed=decimal.Decimal(i['consumed']), 
+                flag=flag,
+                status=self._render_status(i['task_status']))
+              temp.append(line)
+            current_data.append('<br />'.join(temp))
+          days_data.append(current_data)
+        day_pre -= 1
+        names_loaded = True
+    finally:
+      conn.close()
+    if len(days_data) != 5:
+      return ''
+    lines = []
+    lines.append("<br /><p>The following are the statistics of the last 5 days.</p>")
+    lines.append("<table border='1' style='border-width: 1px;border-color: #666666;border-collapse: collapse;'>")
+    lines.append("<tr><th></th><th>前4天</th><th>前3天</th><th>前2天</th><th>前1天</th><th>今天</th></tr>")
+    for i in range(len(names)):
+      lines.append("<tr><td>{name}</td><td>{pre_4}</td><td>{pre_3}</td><td>{pre_2}</td><td>{pre_1}</td><td>{pre_0}</td></tr>".format(
+        name=names[i],
+        pre_4=days_data[0][i],
+        pre_3=days_data[1][i],
+        pre_2=days_data[2][i],   
+        pre_1=days_data[3][i],
+        pre_0=days_data[4][i]  
+      ))
+    lines.append("</table>")
+    return ''.join(lines)
+
   def gen_daily(self):
-    daily_log = self._get_daily_log()
+    daily_log = self._get_daily_log() + self._get_last_5_days_log()
     subject = 'Zentao Dialy {today}'.format(today=self._today)
     message = MIMEText(daily_log, 'html', 'utf-8')
     message['Subject'] = Header(subject, 'utf-8')
