@@ -101,7 +101,7 @@ class ZentaoDialyGen:
               flag = '<a href={url}>Bug</a>'.format(url=url)
             line = '{num}). [{consumed} 小时][{status}]{flag} {task}.'.format(
               num=num, 
-              consumed=decimal.Decimal(i['consumed']), 
+              consumed=i['consumed'], 
               flag=flag,
               task=i['task_title'],
               status=self._render_status(i['task_status']))
@@ -164,7 +164,7 @@ class ZentaoDialyGen:
                 url = '{url}/zentao/bug-view-{bugId}.html'.format(url=self._zentao_url, bugId=i['fromBug'])
                 flag = '<a href={url}>Bug{bugId}</a>'.format(url=url,bugId=i['fromBug'])
               line = '[{consumed} 小时][{status}]{flag}'.format(
-                consumed=decimal.Decimal(i['consumed']), 
+                consumed=i['consumed'], 
                 flag=flag,
                 status=self._render_status(i['task_status']))
               temp.append(line)
