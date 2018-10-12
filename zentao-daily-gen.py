@@ -3,7 +3,7 @@
 @Author: leon.li(l2m2lq@gmail.com)
 @Date: 2018-09-27 22:43:03
 @Last Modified By: leon.li(l2m2lq@gmail.com>)
-@Last Modified Time: 2018-10-08 12:33:43
+@Last Modified Time: 2018-10-12 09:09:43
 '''
 
 import argparse
@@ -18,7 +18,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 
-__version__ = '0.4'
+__version__ = '0.5'
 
 class ZentaoDialyGen:
   def __init__(self, cfg_filename):
@@ -47,6 +47,9 @@ class ZentaoDialyGen:
       return '<span style="color: #ffcc00">doing</span>'
     else:
       return '<span>{}</span>'.format(status)
+  
+  def _remove_zeros_from_float(self, x):
+    return ('%f' % x).rstrip('0').rstrip('.')
 
   def _get_daily_log(self):
     daily_lines = []
@@ -101,7 +104,7 @@ class ZentaoDialyGen:
               flag = '<a href={url}>Bug</a>'.format(url=url)
             line = '{num}). [{consumed} 小时][{status}]{flag} {task}.'.format(
               num=num, 
-              consumed=i['consumed'], 
+              consumed=self._remove_zeros_from_float(i['consumed']), 
               flag=flag,
               task=i['task_title'],
               status=self._render_status(i['task_status']))
@@ -164,7 +167,7 @@ class ZentaoDialyGen:
                 url = '{url}/zentao/bug-view-{bugId}.html'.format(url=self._zentao_url, bugId=i['fromBug'])
                 flag = '<a href={url}>Bug{bugId}</a>'.format(url=url,bugId=i['fromBug'])
               line = '[{consumed} 小时][{status}]{flag}'.format(
-                consumed=i['consumed'], 
+                consumed=self._remove_zeros_from_float(i['consumed']), 
                 flag=flag,
                 status=self._render_status(i['task_status']))
               temp.append(line)
