@@ -35,4 +35,9 @@ crontab -e, 键入如下信息
 pip3 install pymysql
 ```
 
+- 操作Excel需要[XlsxWriter](https://xlsxwriter.readthedocs.io/index.html)
+```
+pip install XlsxWriter
+```
+
 
