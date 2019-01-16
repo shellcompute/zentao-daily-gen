@@ -14,7 +14,10 @@ import itertools
 import decimal
 import smtplib
 from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
 from email.header import Header
+from email import encoders
 import xlsxwriter
 
 __version__ = '0.5'
@@ -36,8 +39,10 @@ class ZentaoWeeklyReport:
     self._mysql_passwd = conf.get('zentao_db', 'password')
     self._weekly_report_users = ["'"+i+"'" for i in conf.get('weekly_report', 'users').split(',')]
     self._weekly_report_to_mails = [x.strip() for x in conf.get('weekly_report', 'to_mails').split(',') if x.strip() != '']
+    self._weekly_report_cc_mails = []
     if conf.has_option('weekly_report', 'cc_mails'):
       self._weekly_report_cc_mails = [x.strip() for x in conf.get('weekly_report', 'cc_mails').split(',') if x.strip() != '']
+    self._weekly_report_bcc_mails = []
     if conf.has_option('weekly_report', 'bcc_mails'):
       self._weekly_report_bcc_mails = [x.strip() for x in conf.get('weekly_report', 'bcc_mails').split(',') if x.strip() != '']
     self._mail_user = conf.get('core', 'mail_user')
@@ -193,7 +198,43 @@ class ZentaoWeeklyReport:
     workbook.close()
 
     # 发送邮件
-    return True
+    subject = 'Zentao Weekly ({start_date}至{end_date})'.format(start_date=start_date, end_date=end_date)
+    message = MIMEMultipart()
+    message['Subject'] = Header(subject, 'utf-8')
+    message['From'] = self._mail_user
+    message['To'] = ','.join(self._weekly_report_to_mails)
+    if self._weekly_report_cc_mails:
+      message['Cc'] = ','.join(self._weekly_report_cc_mails)
+    if self._weekly_report_bcc_mails:
+      message['Bcc'] = ','.join(self._weekly_report_bcc_mails)
+
+    message.attach(MIMEText('这是自动生成的禅道数据邮件。'))
+    part = MIMEBase('application', "octet-stream")
+    part.set_payload(open(xlsx_filename, "rb").read())
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', "attachment; filename='Zentao Weekly Report ({s} ~ {e}).xlsx'".format(s=start_date, e=end_date))
+    message.attach(part)
+    try:
+      smtp = smtplib.SMTP_SSL(self._mail_host)
+      print("connect to SMTP server...")
+      conn_code, conn_msg  = smtp.connect(self._mail_host, 465)
+      if conn_code != 220:
+        print("SMTP connect reply code: {code}, message: {msg}".format(code=conn_code, msg=conn_msg))
+        return False
+      print("login in SMTP server...")
+      smtp.login(self._mail_user, self._mail_passwd)
+      smtp.sendmail(
+        self._mail_user, 
+        self._weekly_report_to_mails + self._weekly_report_cc_mails + self._weekly_report_bcc_mails,
+        message.as_string()
+      )
+      smtp.quit()
+      return True
+    except smtplib.SMTPException as e:
+      print(e)
+    except Exception as e:
+      print("Unexpected error:", e)
+    return False
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Zentao Dialy Generator')
