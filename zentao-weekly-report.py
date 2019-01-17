@@ -150,7 +150,7 @@ class ZentaoWeeklyReport:
 
     # 写入Excel
     start_date, end_date = self._previous_week_range(datetime.date.today())
-    xlsx_filename = '{start_date}至{end_date}项目组禅道数据.xlsx'.format(start_date=start_date, end_date=end_date)
+    xlsx_filename = 'Zentao Weekly Report ({s} ~ {e}).xlsx'.format(s=start_date, e=end_date)
     
     if os.path.exists(xlsx_filename):
       os.remove(xlsx_filename)
@@ -212,7 +212,7 @@ class ZentaoWeeklyReport:
     part = MIMEBase('application', "octet-stream")
     part.set_payload(open(xlsx_filename, "rb").read())
     encoders.encode_base64(part)
-    part.add_header('Content-Disposition', "attachment; filename='Zentao Weekly Report ({s} ~ {e}).xlsx'".format(s=start_date, e=end_date))
+    part.add_header('Content-Disposition', "attachment; filename='{f}'".format(f=xlsx_filename))
     message.attach(part)
     try:
       smtp = smtplib.SMTP_SSL(self._mail_host)
