@@ -109,7 +109,7 @@ class ZentaoWeeklyReport:
       C.name AS sprint_title, 
       D.name AS module_title, 
       GROUP_CONCAT(DISTINCT B.closedBy SEPARATOR ',') AS closed_guy,
-      SUM(IF(estimate > 0, `estimate`, A.consumed)) AS consumed
+      SUM(A.consumed) AS consumed
       FROM (
         SELECT task, account, ROUND(SUM(consumed),1) AS consumed
         FROM zt_taskestimate
