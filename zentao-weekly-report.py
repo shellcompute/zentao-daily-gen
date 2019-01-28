@@ -80,7 +80,7 @@ class ZentaoWeeklyReport:
       LEFT JOIN zt_task B ON A.task = B.id
       LEFT JOIN zt_project C ON B.project = C.id
       LEFT JOIN zt_module D ON B.module = D.id
-      WHERE B.status = 'closed'
+      WHERE B.status = 'closed' OR B.status = 'done'
       ORDER BY A.task ASC
       """
     start_date, end_date = self._previous_week_range(datetime.date.today())
